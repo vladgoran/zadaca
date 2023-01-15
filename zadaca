@@ -1,0 +1,81 @@
+<?php
+
+namespace Retail;
+
+interface Purchasable {
+    public function addToInventory($quantity);
+    public function removeFromInventory($quantity);
+}
+
+abstract class Inventory {
+    protected $items = [];
+    public function addItem(Purchasable $item) {
+        array_push($this->items, $item);
+    }
+    public function removeItem(Purchasable $item) {
+        foreach ($this->items as $key => $value) {
+            if ($value === $item) {
+                unset($this->items[$key]);
+            }
+        }
+    }
+    public function checkAvailability(Purchasable $item) {
+        return in_array($item, $this->items);
+    }
+}
+
+class Product implements Purchasable {
+    private $name;
+    private $price;
+    private $quantity;
+    public function __construct($name, $price, $quantity) {
+        $this->name = $name;
+        $this->price = $price;
+        $this->quantity = $quantity;
+    }
+    public function addToInventory($quantity) {
+        $this->quantity += $quantity;
+    }
+    public function removeFromInventory($quantity) {
+        $this->quantity -= $quantity;
+    }
+}
+
+class Store extends Inventory {
+    use Discount;
+    private $name;
+    private $address;
+    private $lastUpdate;
+    public static $numberOfStores = 0;
+    public function __construct($name, $address) {
+        $this->name = $name;
+        $this->address = $address;
+        self::$numberOfStores++;
+    }
+    public function addProduct(Product $product, $quantity) {
+        $product->addToInventory($quantity);
+        $this->addItem($product);
+    }
+    public function removeProduct(Product $product, $quantity) {
+        $product->removeFromInventory($quantity);
+        if ($product->quantity <= 0) {
+            $this->removeItem($product);
+        }
+    }
+    public function formatAddress() {
+        return strtoupper($this->address);
+    }
+    public function calculateRevenue() {
+        $revenue = 0;
+        foreach ($this->items as $product) {
+            $revenue += $product->price * $product->quantity;
+        }
+        return $revenue;
+    }
+    public function getLastUpdate() {
+        return $this->lastUpdate;
+    }
+    public function setLastUpdate($date) {
+        $this->lastUpdate = $date;
+    }
+}
